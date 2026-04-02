@@ -1,20 +1,20 @@
 
 import React from 'react';
-import {
-  Text,
-  View,
-} from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
 
 import "./global.css"
+import RootRouteNavigator from './src/routes/RootRouteNavigator';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 
 function App(): React.JSX.Element {
 
   return (
-    <View className="flex-1 items-center justify-center bg-white">
-      <Text className="text-xl font-bold text-blue-500">
-        Welcome to Nativewind!
-      </Text>
-    </View>
+    <GestureHandlerRootView style = {{flex: 1}}>
+       <NavigationContainer>
+       <RootRouteNavigator />
+      </NavigationContainer>
+    </GestureHandlerRootView>
   );
 }
 
