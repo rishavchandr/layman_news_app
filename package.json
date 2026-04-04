@@ -10,8 +10,9 @@
     "test": "jest"
   },
   "dependencies": {
+    "@google/genai": "^1.48.0",
     "@react-native-async-storage/async-storage": "^1.23.1",
-    "@react-native-vector-icons/fontawesome6": "12.3.0",
+    "@react-native-vector-icons/fontawesome": "^13.0.0",
     "@react-native-vector-icons/ionicons": "12.3.0",
     "@react-native-vector-icons/material-design-icons": "12.4.0",
     "@react-navigation/bottom-tabs": "7.14.0",

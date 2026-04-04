@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,11 +14,13 @@ import {
   StatusBar,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RouteProp,useNavigation,useRoute } from '@react-navigation/native'
-import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
+import FontAwesome from '@react-native-vector-icons/fontawesome';
 import { RootStackParamList } from '../routes/MainRouteNavigator';
-import {toggleSaveArticle} from '../api/ArticleService'
+import { toggleSaveArticle, isArticleSaved } from '../api/ArticleService'
+import DotIndicator from '../components/DotIndicator';
+import { NewsArticle } from '../api/NewsService';
 
 const { width } = Dimensions.get('window');
 
@@ -26,22 +28,6 @@ const CARD_WIDTH = width - 48;
 
 type ArticleDetailsNav = NativeStackNavigationProp<RootStackParamList, 'ArticleDetails'>;
 type ArticleDetailsRoute = RouteProp<RootStackParamList, 'ArticleDetails'>;
-
-const DotIndicator = ({ total, active }: { total: number; active: number }) => (
-  <View className="flex-row justify-center items-center mt-5 gap-2">
-    {Array.from({ length: total }).map((_, i) => (
-      <View
-        key={i}
-        style={{
-          height: 6,
-          borderRadius: 3,
-          backgroundColor: i === active ? '#E8572A' : '#D4D4D8',
-          width: i === active ? 20 : 6,
-        }}
-      />
-    ))}
-  </View>
-);
 
 
 const IconBtn = ({
@@ -67,11 +53,10 @@ const IconBtn = ({
       borderColor: active ? '#E8572A' : 'transparent',
     }}
   >
-    <FontAwesome6
+    <FontAwesome
       name={name}
-      size={16}
+      size={20}
       color={active ? '#E8572A' : '#3F3F46'}
-      iconStyle="solid"
     />
   </TouchableOpacity>
 );
@@ -100,6 +85,7 @@ const ArticleDetailsScreen = () => {
     "xAI, Elon Musk's AI company, just raised $6 billion from big investors. They'll use the money to buy thousands of powerful chips and build an AI smarter than ChatGPT.",
     "xAI, Elon Musk's AI company, just raised $6 billion from big investors. They'll use the money to buy thousands of powerful chips and build an AI smarter than ChatGPT."
   ];
+  const validCards = laymanCards.filter(card => card && card.trim().length > 0);
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -109,14 +95,23 @@ const ArticleDetailsScreen = () => {
     []
   );
 
+  useEffect(() => {
+    handleSave(article)
+  }, [])
+
   const handleShare = async () => {
     try {
       await Share.share({
         message: `${article.title}\n\nRead on Layman`,
         url: article.link,
       });
-    } catch {}
+    } catch { }
   };
+
+  const handleSave = async (articles: NewsArticle) => {
+    const isSaved = await isArticleSaved(articles.article_id)
+    setSaved(isSaved)
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -135,18 +130,18 @@ const ArticleDetailsScreen = () => {
             borderRadius: 20,
           }}
         >
-          <FontAwesome6 name="chevron-left" size={15} color="#3F3F46" iconStyle="solid" />
+          <FontAwesome name="chevron-left" size={15} color="#3F3F46" />
         </TouchableOpacity>
 
         <View className="flex-row items-center gap-2">
           <IconBtn name="link" onPress={() => setShowWebView(true)} />
 
           <IconBtn
-            name="bookmark"
-            onPress={() => toggleSaveArticle}
+            name={saved ? "bookmark" : "bookmark-o"}
+            onPress={() => toggleSaveArticle(article)}
             active={saved}
           />
-          <IconBtn name="share-from-square" onPress={handleShare} />
+          <IconBtn name="share-alt" onPress={handleShare} />
         </View>
       </View>
 
@@ -172,39 +167,19 @@ const ArticleDetailsScreen = () => {
             className="bg-zinc-200"
             resizeMode="cover"
           />
-          {article.source_name ? (
-            <Text className="text-zinc-400 text-[11px] mt-2 ml-1 font-medium">
-              {article.source_name} ·{' '}
-              {new Date(article.pubDate).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </Text>
-          ) : null}
-        </View>
-
-        <View className="flex-row justify-between items-center px-5 mb-3">
-          <Text style={{ fontSize: 15, fontWeight: '700', color: '#18181B' }}>
-            The TL;DR
-          </Text>
-          <Text className="text-zinc-400 text-xs font-medium">Swipe →</Text>
         </View>
 
         <ScrollView
           horizontal
-          pagingEnabled={false}
           showsHorizontalScrollIndicator={false}
           snapToInterval={CARD_WIDTH + 16}
           decelerationRate="fast"
           onScroll={handleScroll}
           scrollEventThrottle={16}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingRight: 20 }}
+          contentContainerStyle={{ paddingHorizontal: 20 }}
         >
-          {laymanCards.map((text, index) => (
-            <View
-              key={index}
-              style={{
+          {validCards.map((text, index) => (
+            <View key={index} style={{
                 width: CARD_WIDTH,
                 marginRight: 16,
                 height: 210,
@@ -219,41 +194,24 @@ const ArticleDetailsScreen = () => {
                 shadowOpacity: 0.06,
                 shadowRadius: 8,
                 elevation: 2,
-              }}
-            >
-              <View
-                style={{
-                  alignSelf: 'flex-start',
-                  backgroundColor: '#FFF0EB',
-                  paddingHorizontal: 12,
-                  paddingVertical: 4,
-                  borderRadius: 99,
-                }}
-              >
-                <Text
-                  style={{ fontSize: 11, fontWeight: '700', color: '#E8572A', letterSpacing: 0.5 }}
-                >
-                  PART {index + 1} OF {laymanCards.length}
-                </Text>
-              </View>
-              <Text
-                style={{
+              }}>
+              <Text numberOfLines={6} 
+              style={{
                   fontSize: 16,
                   lineHeight: 26,
                   color: '#27272A',
                   fontWeight: '500',
                   flex: 1,
                   marginTop: 14,
-                }}
-                numberOfLines={6}
-              >
+                  }}
+                  >
                 {text}
               </Text>
             </View>
           ))}
         </ScrollView>
 
-        <DotIndicator total={laymanCards.length} active={activeIndex} />
+        <DotIndicator total={validCards.length} active={activeIndex} />
       </ScrollView>
 
       <View

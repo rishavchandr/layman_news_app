@@ -5,6 +5,7 @@ module.exports = {
   "./src/screens/**/*.{js,ts,jsx,tsx}",
   "./src/components/**/*.{js,ts,jsx,tsx}",
   "./src/routes/**/*.{js,ts,jsx,tsx}",
+  "./src/screens/MainTabScreens/*.{js,ts,jsx,tsx}",
   ],
   presets: [require("nativewind/preset")],
   theme: {

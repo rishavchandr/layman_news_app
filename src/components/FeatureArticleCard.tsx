@@ -5,15 +5,16 @@ import {
   Image,
   TouchableOpacity,
   Dimensions,
+  StyleSheet,
 } from 'react-native';
-import { LinearGradient } from 'react-native-linear-gradient';
+import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NewsArticle } from '../api/NewsService';
 import { RootStackParamList } from '../routes/MainRouteNavigator';
 
 const { width } = Dimensions.get('window');
-export const CAROUSEL_ITEM_WIDTH = width - 48; 
+export const CAROUSEL_ITEM_WIDTH = width - 48;
 
 type CarouselNavProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
@@ -27,51 +28,64 @@ const FeaturedArticleCard = ({ article }: FeaturedCardProps) => {
   return (
     <TouchableOpacity
       onPress={() => navigation.navigate('ArticleDetails', { article })}
-      activeOpacity={0.9}
-      className="rounded-[28px] mr-4 overflow-hidden bg-zinc-200"
-      style={{
-        width: CAROUSEL_ITEM_WIDTH,
-        height: 220,
-        shadowColor: '#1A1008',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.18,
-        shadowRadius: 16,
-        elevation: 6,
-      }}
+      activeOpacity={0.95}
+      style={styles.card}
     >
       <Image
         source={{ uri: article.image_url || 'https://via.placeholder.com/400' }}
-        style={{ width: '100%', height: '100%', position: 'absolute' }}
+        style={styles.image}
         resizeMode="cover"
       />
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.75)']}
-        style={{ flex: 1, justifyContent: 'flex-end', padding: 20 }}
+        colors={['transparent', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.95)']}
+        locations={[0.3, 0.7, 1]}
+        style={styles.gradient}
       >
-        {article.category?.[0] && (
-          <View
-            className="self-start px-3 py-1 rounded-full mb-2"
-            style={{ backgroundColor: '#E8572A' }}
-          >
-            <Text className="text-white text-[10px] font-bold uppercase tracking-wider">
-              {article.category[0]}
-            </Text>
-          </View>
-        )}
-        <Text
-          className="text-white font-bold leading-snug"
-          style={{ fontSize: 16 }}
-          numberOfLines={2}
-        >
-          {article.title}
-        </Text>
-        
-        <Text className="text-white/60 text-[11px] mt-1 font-medium">
-          {article.source_name}
-        </Text>
+        <View style={styles.textContainer}>
+          <Text style={styles.title} numberOfLines={2}>
+            {article.title}
+          </Text>
+        </View>
       </LinearGradient>
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  card: {
+    width: CAROUSEL_ITEM_WIDTH,
+    height: 240, // Increased height slightly for a more premium feel
+    borderRadius: 32, // Smooth rounded corners as seen in your screenshot
+    marginRight: 16,
+    overflow: 'hidden',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  gradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    top: 0, // Makes the gradient container fill the entire card
+    justifyContent: 'flex-end',
+  },
+  textContainer: {
+    padding: 24, // Generous padding for the text
+  },
+  title: {
+    color: 'white',
+    fontSize: 22,
+    fontWeight: '800', // Extra bold like the screenshot
+    lineHeight: 28,
+    letterSpacing: -0.5,
+  },
+});
 
 export default FeaturedArticleCard;

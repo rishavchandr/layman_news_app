@@ -6,23 +6,23 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  ScrollView,
+  StyleSheet,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { supabase } from '../../lib/supabase';
 import { handleLogout } from '../../api/Authentication';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation , CommonActions } from '@react-navigation/native';
 import { AuthStackParamList } from '../../routes/AuthRouteNavigator';
-
 
 const ProfileScreen = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
-  
 
-const loadUser = useCallback(async () => {
+  const loadUser = useCallback(async () => {
     try {
       setLoading(true);
       const { data: { user: currentUser }, error } = await supabase.auth.getUser();
@@ -40,14 +40,29 @@ const loadUser = useCallback(async () => {
     loadUser();
   }, [loadUser]);
 
-  const onConfirmLogout = async () => {
+const onConfirmLogout = async () => {
     try {
       setLoggingOut(true);
       await handleLogout();
+      const rootNavigation = navigation.getParent();
+      if (rootNavigation) {
+      rootNavigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'AuthStack', 
+              params: { screen: 'LoginScreen' }, 
+            },
+          ],
+        })
+      );
+    } else {
       navigation.reset({
         index: 0,
         routes: [{ name: 'LoginScreen' }],
       });
+    }
     } catch (error) {
       Alert.alert('Error', 'Something went wrong while logging out.');
     } finally {
@@ -63,70 +78,185 @@ const loadUser = useCallback(async () => {
   };
 
   return (
-    <LinearGradient colors={['#FFF5F0', '#FFFFFF']} className="flex-1">
-      <SafeAreaView className="flex-1">
-        <View className="flex-1 px-6">
-          <View className="items-center mt-12 mb-10">
+    <LinearGradient colors={['#FFF5F0', '#FFFFFF']} style={styles.gradient}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
             <LinearGradient
               colors={['#FFDAB9', '#FF8C00']}
-              className="rounded-full shadow-lg p-[3px]"
+              style={styles.avatarBorder}
             >
-              <View className="w-24 h-24 bg-white rounded-full items-center justify-center">
-                <Text className="text-4xl">👤</Text>
+              <View style={styles.avatarContainer}>
+                <Text style={styles.avatarIcon}>👤</Text>
               </View>
             </LinearGradient>
 
-            <View className="items-center mt-6">
-              <Text className="text-zinc-400 font-bold uppercase text-[10px] tracking-[2px] mb-1">
-                Account Email
-              </Text>
+            <View style={styles.emailContainer}>
+              <Text style={styles.emailLabel}>ACCOUNT EMAIL</Text>
               {loading ? (
-                <ActivityIndicator color="#FF8C00" className="mt-2" />
+                <ActivityIndicator color="#FF8C00" />
               ) : (
-                <Text className="text-xl font-bold text-black tracking-tight text-center">
+                <Text style={styles.emailText}>
                   {user?.email || 'Not available'}
                 </Text>
               )}
             </View>
           </View>
 
-          <View className="mt-4">
-            <Text className="text-zinc-400 font-bold uppercase text-[10px] tracking-[2px] mb-3 ml-1">
-              Coming Soon
-            </Text>
-            <View className="bg-white/60 rounded-[32px] p-8 border border-zinc-100 items-center border-dashed">
-              <View className="bg-orange-100/50 p-3 rounded-full mb-4">
-                <Text className="text-xl">🚀</Text>
+          <View style={styles.comingSoonSection}>
+            <Text style={styles.sectionLabel}>COMING SOON</Text>
+            <View style={styles.comingSoonCard}>
+              <View style={styles.rocketIconWrapper}>
+                <Text style={styles.rocketIcon}>🚀</Text>
               </View>
-              <Text className="text-zinc-500 text-center font-medium leading-6 text-[15px]">
+              <Text style={styles.comingSoonText}>
                 We're building new ways for you to personalize your news experience. Stay tuned!
               </Text>
             </View>
           </View>
 
-          <View className="flex-1 justify-end mb-10">
+          <View style={styles.footer}>
             <TouchableOpacity
               onPress={handleSignOut}
               activeOpacity={0.7}
               disabled={loggingOut}
-              className="overflow-hidden rounded-3xl"
+              style={styles.signOutButton}
             >
-              <View className="bg-zinc-100 h-16 items-center justify-center border border-zinc-200">
+              <View style={styles.signOutInner}>
                 {loggingOut ? (
                   <ActivityIndicator color="#FF8C00" />
                 ) : (
-                  <Text className="text-red-600 font-bold text-lg">Sign Out</Text>
+                  <Text style={styles.signOutText}>Sign Out</Text>
                 )}
               </View>
             </TouchableOpacity>
-            <Text className="text-center text-zinc-300 text-[10px] font-bold uppercase tracking-[3px] mt-6">
-              Layman v1.0.0
-            </Text>
+            <Text style={styles.versionText}>Layman v1.0.0</Text>
           </View>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
 };
+
+const styles = StyleSheet.create({
+  gradient: {
+    flex: 1, 
+  },
+  safeArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  header: {
+    alignItems: 'center',
+    marginTop: 48,
+    marginBottom: 40,
+  },
+  avatarBorder: {
+    borderRadius: 999,
+    padding: 3,
+  },
+  avatarContainer: {
+    width: 96,
+    height: 96,
+    backgroundColor: 'white',
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarIcon: {
+    fontSize: 40,
+  },
+  emailContainer: {
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  emailLabel: {
+    color: '#a1a1aa', // zinc-400
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    fontSize: 10,
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  emailText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000',
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  comingSoonSection: {
+    marginTop: 16,
+  },
+  sectionLabel: {
+    color: '#a1a1aa',
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    fontSize: 10,
+    letterSpacing: 2,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  comingSoonCard: {
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 32,
+    padding: 32,
+    borderWidth: 1,
+    borderColor: '#f4f4f5',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+  },
+  rocketIconWrapper: {
+    backgroundColor: 'rgba(255,140,0,0.1)',
+    padding: 12,
+    borderRadius: 999,
+    marginBottom: 16,
+  },
+  rocketIcon: {
+    fontSize: 24,
+  },
+  comingSoonText: {
+    color: '#71717a',
+    textAlign: 'center',
+    fontWeight: '500',
+    lineHeight: 24,
+    fontSize: 15,
+  },
+  footer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    marginBottom: 40,
+  },
+  signOutButton: {
+    overflow: 'hidden',
+    borderRadius: 24,
+  },
+  signOutInner: {
+    backgroundColor: '#f4f4f5',
+    height: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e4e4e7',
+  },
+  signOutText: {
+    color: '#dc2626',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  versionText: {
+    textAlign: 'center',
+    color: '#d4d4d8',
+    fontSize: 10,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 3,
+    marginTop: 24,
+  },
+});
 
 export default ProfileScreen;

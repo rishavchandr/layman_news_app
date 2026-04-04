@@ -12,18 +12,18 @@ import {
   StatusBar,
   Animated,
 } from 'react-native';
-import { NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RouteProp,useNavigation,useRoute } from '@react-navigation/native';
-import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import FontAwesome from '@react-native-vector-icons/fontawesome';
 import { RootStackParamList } from '../routes/MainRouteNavigator';
-import { sendGrokMessage, generateGrokSuggestions, GrokMessage } from '../api/GrokAIService';
+import { sendMessage, generateSuggestions, ChatMessage as ServiceChatMessage } from '../api/GeminiAIService';
 
 type AskLaymanNav = NativeStackNavigationProp<RootStackParamList, 'AskLayman'>;
 type AskLaymanRoute = RouteProp<RootStackParamList, 'AskLayman'>;
 
-type ChatMessage = {
+type UIMessage = {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'model';
   content: string;
 };
 
@@ -64,7 +64,7 @@ const TypingDots = () => {
   );
 };
 
-const Bubble = ({ message }: { message: ChatMessage }) => {
+const Bubble = ({ message }: { message: UIMessage }) => {
   const isUser = message.role === 'user';
   return (
     <View style={{ alignSelf: isUser ? 'flex-end' : 'flex-start', maxWidth: '80%', marginBottom: 10 }}>
@@ -105,23 +105,20 @@ const Chip = ({ text, onPress }: { text: string; onPress: () => void }) => (
   </TouchableOpacity>
 );
 
-
 const AskLaymans = () => {
-    const navigation = useNavigation<AskLaymanNav>();
+  const navigation = useNavigation<AskLaymanNav>();
   const route = useRoute<AskLaymanRoute>();
   const { article } = route.params;
 
   const articleContext = {
     title: article.title,
-    summary: [
-      article.description ?? 'No summary available for this article.',
-    ],
+    summary: [article.description ?? 'No summary available for this article.'],
   };
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [messages, setMessages] = useState<UIMessage[]>([
     {
       id: 'welcome',
-      role: 'assistant',
+      role: 'model',
       content: "Hi, I'm Layman! What do you want to know about this article?",
     },
   ]);
@@ -130,11 +127,12 @@ const AskLaymans = () => {
   const [loading, setLoading] = useState(false);
   const [suggestionsReady, setSuggestionsReady] = useState(false);
 
-  const history = useRef<GrokMessage[]>([]);
+  // History for API – no id, just role & content
+  const history = useRef<ServiceChatMessage[]>([]);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    generateGrokSuggestions(articleContext.title, articleContext.summary)
+    generateSuggestions(articleContext.title, articleContext.summary)
       .then(qs => setSuggestions(qs))
       .catch(() =>
         setSuggestions([
@@ -157,31 +155,32 @@ const AskLaymans = () => {
       setInput('');
       setSuggestions([]);
 
-      const userMsg: ChatMessage = {
+      const userMsg: UIMessage = {
         id: Date.now().toString(),
         role: 'user',
         content: userText,
       };
       setMessages(prev => [...prev, userMsg]);
+      // Add to history for API
       history.current.push({ role: 'user', content: userText });
       scrollToEnd();
 
       setLoading(true);
       try {
-        const reply = await sendGrokMessage(userText, articleContext, history.current);
-        const botMsg: ChatMessage = {
+        const reply = await sendMessage(userText, articleContext, history.current);
+        const botMsg: UIMessage = {
           id: (Date.now() + 1).toString(),
-          role: 'assistant',
+          role: 'model',
           content: reply,
         };
         setMessages(prev => [...prev, botMsg]);
-        history.current.push({ role: 'assistant', content: reply });
+        history.current.push({ role: 'model', content: reply });
       } catch {
         setMessages(prev => [
           ...prev,
           {
             id: (Date.now() + 1).toString(),
-            role: 'assistant',
+            role: 'model',
             content: 'Something went wrong — try asking again?',
           },
         ]);
@@ -220,7 +219,7 @@ const AskLaymans = () => {
             borderRadius: 19,
           }}
         >
-          <FontAwesome6 name="xmark" size={15} color="#3F3F46" iconStyle="solid" />
+          <FontAwesome name="crosshairs" size={15} color="#3F3F46" />
         </TouchableOpacity>
 
         <View style={{ alignItems: 'center' }}>
@@ -248,7 +247,6 @@ const AskLaymans = () => {
         </View>
       </View>
 
-      {/* Message list */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -347,7 +345,7 @@ const AskLaymans = () => {
               onSubmitEditing={() => handleSend()}
             />
             <TouchableOpacity activeOpacity={0.7}>
-              <FontAwesome6 name="microphone" size={15} color="#A1A1AA" iconStyle="solid" />
+              <FontAwesome name="microphone" size={15} color="#A1A1AA" />
             </TouchableOpacity>
           </View>
 
@@ -367,7 +365,7 @@ const AskLaymans = () => {
             {loading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <FontAwesome6 name="arrow-up" size={16} color="#fff" iconStyle="solid" />
+              <FontAwesome name="arrow-up" size={16} color="#fff" />
             )}
           </TouchableOpacity>
         </View>

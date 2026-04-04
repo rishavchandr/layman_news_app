@@ -4,6 +4,7 @@ import MainTabRouteNavigator from './MainTabRouteNavigator'
 import { NewsArticle } from '../api/NewsService';
 import ArticleDetailsScreen from '../screens/ArticleDetailsScreen';
 import AskLaymans from '../screens/AskLaymans';
+import SearchScreen from '../screens/SearchScreen';
 
 const Stack = createNativeStackNavigator()
 
@@ -11,6 +12,7 @@ export type RootStackParamList = {
   MainTabs: undefined;
   ArticleDetails: { article: NewsArticle };
   AskLayman: { article: NewsArticle };
+  SearchScreen: undefined
 };
 
 const MainRouteNavigator = () => {
@@ -27,8 +29,16 @@ const MainRouteNavigator = () => {
           component={AskLaymans}
           options={{
             animation: 'slide_from_bottom',
-            presentation: 'modal',
+            presentation: 'formSheet',
+            headerShown: false,
+            sheetAllowedDetents: [0.5, 0.75, 1],
+            sheetInitialDetentIndex: 1
           }}
+        />
+        <Stack.Screen
+          name="SearchScreen"
+          component={SearchScreen}
+          options={{ animation: 'slide_from_right' }}
         />
     </Stack.Navigator>
   )

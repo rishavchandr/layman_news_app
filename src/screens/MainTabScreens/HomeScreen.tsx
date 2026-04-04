@@ -1,90 +1,97 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   ActivityIndicator,
   RefreshControl,
   SafeAreaView,
   StatusBar,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  StyleSheet,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {
-  fetchFeaturedNews,
-  fetchTodaysPicks,
-  NewsArticle,
-} from '../../api/NewsService';
 import ArticleCard from '../../components/ArticleCard';
-import FeaturedArticleCard from '../../components/FeatureArticleCard';
+import FeaturedArticleCard, { CAROUSEL_ITEM_WIDTH } from '../../components/FeatureArticleCard';
+import DotIndicator from '../../components/DotIndicator';
+import { useFocusEffect } from '@react-navigation/native';
+import { NewsArticle , fetchFeaturedNews , fetchTodaysPicks } from '../../api/NewsService';
+import FontAwesome from '@react-native-vector-icons/fontawesome';
+import { RootStackParamList } from '../../routes/MainRouteNavigator';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-const { width } = Dimensions.get('window');
-const CAROUSEL_ITEM_WIDTH = width - 40;
 
 const HomeScreen = () => {
   const [featured, setFeatured] = useState<NewsArticle[]>([]);
   const [picks, setPicks] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
+
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetX = e.nativeEvent.contentOffset.x;
+      const index = Math.round(offsetX / (CAROUSEL_ITEM_WIDTH + 16));
+      setActiveIndex(Math.min(index, featured.length - 1));
+    },
+    [featured.length]
+  );
 
   const loadData = useCallback(async () => {
-    try {
-      const [featuredData, picksData] = await Promise.all([
-        fetchFeaturedNews().catch(() => []),
-        fetchTodaysPicks().catch(() => []),
-      ]);
+  if (!refreshing) setLoading(true);
+  try {
+    const [featuredData, picksData] = await Promise.all([
+      fetchFeaturedNews(),
+      fetchTodaysPicks(),
+    ]);
+    setFeatured(featuredData);
+    setPicks(picksData);
+  } catch (error) {
+    
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
+}, [refreshing]);
 
-      setFeatured(Array.isArray(featuredData) ? featuredData : []);
-      setPicks(Array.isArray(picksData) ? picksData : []);
-    } catch (error) {
-      console.error('Fetch Error:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
+useFocusEffect(
+  useCallback(() => {
     loadData();
-  }, [loadData]);
+  }, [loadData])
+);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadData();
-  };
+const onRefresh = () => {
+  setRefreshing(true);
+  loadData();
+};
 
   if (loading && !refreshing) {
     return (
-      <View className="flex-1 justify-center items-center bg-[#FFF5F0]">
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FF8C00" />
       </View>
     );
   }
 
   return (
-    <LinearGradient colors={['#FFF5F0', '#FFFFFF']} className="flex-1">
+    <LinearGradient colors={['#FFF5F0', '#FFFFFF']} style={styles.gradient}>
       <StatusBar barStyle="dark-content" />
-      <SafeAreaView className="flex-1">
-        
-        {/* Header - Fixed with Nativewind */}
-        <View className="flex-row justify-between items-center px-5 py-4 border-b border-zinc-100">
-          <Text className="text-3xl font-[900] text-black tracking-tighter">
-            Layman
-          </Text>
-
-          <TouchableOpacity 
-            activeOpacity={0.8} 
-            className="flex-row items-center bg-white rounded-full px-4 h-10 w-[45%] justify-between border border-zinc-100 shadow-sm"
-          >
-            <Text className="text-zinc-400 text-xs font-medium">Search</Text>
-            <View className="w-4 h-4 rounded-full border-2 border-zinc-200" />
+      <SafeAreaView style={styles.safeArea}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.logo}>Layman</Text>
+          <TouchableOpacity activeOpacity={0.8} style={styles.searchButton} onPress={() => navigation.navigate('SearchScreen')}>
+            <FontAwesome name='search' color="#e4e4e7" size={22} />
           </TouchableOpacity>
         </View>
 
         <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF8C00" />
@@ -92,13 +99,15 @@ const HomeScreen = () => {
         >
           {/* Featured Carousel */}
           {featured.length > 0 && (
-            <View className="py-6">
+            <View style={styles.carouselContainer}>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 snapToInterval={CAROUSEL_ITEM_WIDTH + 16}
                 decelerationRate="fast"
-                contentContainerStyle={{ paddingHorizontal: 20 }}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+                contentContainerStyle={styles.carouselContent}
               >
                 {featured.map((item) => (
                   <FeaturedArticleCard
@@ -110,12 +119,15 @@ const HomeScreen = () => {
             </View>
           )}
 
+          {/* Dot Indicator */}
+          <DotIndicator total={featured.length} active={activeIndex} />
+
           {/* Today's Picks */}
-          <View className="px-5 mt-2">
-            <View className="flex-row justify-between items-end mb-5">
-              <Text className="text-2xl font-black text-zinc-900">Today's Picks</Text>
+          <View style={styles.picksContainer}>
+            <View style={styles.picksHeader}>
+              <Text style={styles.picksTitle}>Today's Picks</Text>
               <TouchableOpacity>
-                <Text className="text-orange-600 font-bold text-sm">View All</Text>
+                <Text style={styles.viewAllText}>View All</Text>
               </TouchableOpacity>
             </View>
 
@@ -127,15 +139,10 @@ const HomeScreen = () => {
                 />
               ))
             ) : (
-              <View className="bg-white/60 rounded-[32px] p-10 border border-zinc-100 items-center border-dashed">
-                <Text className="text-zinc-400 text-center font-semibold text-base">
-                  No picks available right now.
-                </Text>
-                <TouchableOpacity 
-                  onPress={loadData} 
-                  className="mt-4 bg-orange-50 px-6 py-2 rounded-full"
-                >
-                  <Text className="text-orange-600 font-bold">Try Again</Text>
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No picks available right now.</Text>
+                <TouchableOpacity onPress={onRefresh} style={styles.retryButton}>
+                  <Text style={styles.retryText}>Try Again</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -145,5 +152,109 @@ const HomeScreen = () => {
     </LinearGradient>
   );
 };
+
+const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFF5F0',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f4f4f5',
+  },
+  logo: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#000000',
+    letterSpacing: -0.5,
+  },
+searchButton: {
+    width: 44, 
+    height: 44,
+    borderRadius: 22, 
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#f4f4f5',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2, 
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  carouselContainer: {
+    paddingVertical: 24,
+  },
+  carouselContent: {
+    paddingHorizontal: 20,
+  },
+  picksContainer: {
+    paddingHorizontal: 20,
+    marginTop: 8,
+  },
+  picksHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 20,
+  },
+  picksTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#18181b',
+  },
+  viewAllText: {
+    color: '#ea580c',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  emptyState: {
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 32,
+    padding: 40,
+    borderWidth: 1,
+    borderColor: '#f4f4f5',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    color: '#a1a1aa',
+    textAlign: 'center',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  retryButton: {
+    marginTop: 16,
+    backgroundColor: '#fff7ed',
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 999,
+  },
+  retryText: {
+    color: '#ea580c',
+    fontWeight: 'bold',
+  },
+});
 
 export default HomeScreen;

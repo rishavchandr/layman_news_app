@@ -1,24 +1,61 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { NewsArticle } from "./NewsService";
-
-const SAVED_ARTICLES_KEY = '@saved-article'
+import { supabase } from '../lib/supabase';
+import { NewsArticle } from './NewsService';
 
 export const toggleSaveArticle = async (article: NewsArticle): Promise<boolean> => {
-  const saved = await getSavedArticles();
-  const isSaved = saved.find(a => a.article_id === article.article_id);
-  
-  let newSaved;
-  if (isSaved) {
-    newSaved = saved.filter(a => a.article_id !== article.article_id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data: existing } = await supabase
+    .from('saved_articles')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('article_id', article.article_id)
+    .single();
+
+  if (existing) {
+   const { error } = await supabase
+      .from('saved_articles')
+      .delete()
+      .eq('id', existing.id);
+    if (error) throw error;
+    return false;
   } else {
-    newSaved = [article, ...saved];
+    const { error } = await supabase
+      .from('saved_articles')
+      .insert({
+        user_id: user.id,
+        article_id: article.article_id,
+        article_data: article,
+      });
+    if (error) throw error;
+    return true; 
   }
-  
-  await AsyncStorage.setItem(SAVED_ARTICLES_KEY, JSON.stringify(newSaved));
-  return !isSaved; 
 };
 
 export const getSavedArticles = async (): Promise<NewsArticle[]> => {
-  const data = await AsyncStorage.getItem(SAVED_ARTICLES_KEY);
-  return data ? JSON.parse(data) : [];
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('saved_articles')
+    .select('article_data')
+    .eq('user_id', user.id)
+    .order('saved_at', { ascending: false });
+
+  if (error) throw error;
+  return data?.map(row => row.article_data) || [];
+};
+
+export const isArticleSaved = async (articleId: string): Promise<boolean> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { count, error } = await supabase
+    .from('saved_articles')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('article_id', articleId);
+
+  if (error) throw error;
+  return (count ?? -1) > 0;
 };
