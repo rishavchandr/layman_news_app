@@ -219,7 +219,7 @@ const AskLaymans = () => {
             borderRadius: 19,
           }}
         >
-          <FontAwesome name="crosshairs" size={15} color="#3F3F46" />
+          <FontAwesome name="chevron-down" size={15} color="#3F3F46" />
         </TouchableOpacity>
 
         <View style={{ alignItems: 'center' }}>
@@ -247,17 +247,13 @@ const AskLaymans = () => {
         </View>
       </View>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}
-      >
+      <View style={{ flex: 1 }}>
         <FlatList
           ref={flatListRef}
           data={messages}
           keyExtractor={item => item.id}
           style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 20, paddingBottom: 8 }}
+          contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => <Bubble message={item} />}
@@ -302,74 +298,76 @@ const AskLaymans = () => {
         />
 
         {/* Input bar */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'flex-end',
-            gap: 10,
-            paddingHorizontal: 20,
-            paddingVertical: 12,
-            paddingBottom: Platform.OS === 'ios' ? 24 : 14,
-            borderTopWidth: 1,
-            borderTopColor: '#F4F4F5',
-            backgroundColor: '#fff',
-          }}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}
         >
           <View
             style={{
-              flex: 1,
               flexDirection: 'row',
               alignItems: 'flex-end',
-              backgroundColor: '#F4F4F5',
-              borderRadius: 24,
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-              gap: 8,
+              gap: 10,
+              paddingHorizontal: 20,
+              paddingVertical: 12,
+              paddingBottom: Platform.OS === 'ios' ? 24 : 14,
+              borderTopWidth: 1,
+              borderTopColor: '#F4F4F5',
+              backgroundColor: '#fff',
             }}
           >
-            <TextInput
+            <View
               style={{
                 flex: 1,
-                fontSize: 15,
-                color: '#18181B',
-                maxHeight: 100,
-                minHeight: 22,
-                lineHeight: 22,
+                flexDirection: 'row',
+                alignItems: 'flex-end',
+                backgroundColor: '#F4F4F5',
+                borderRadius: 24,
+                paddingHorizontal: 16,
+                paddingVertical: 10,
               }}
-              value={input}
-              onChangeText={setInput}
-              placeholder="Type your question..."
-              placeholderTextColor="#A1A1AA"
-              multiline
-              returnKeyType="send"
-              onSubmitEditing={() => handleSend()}
-            />
-            <TouchableOpacity activeOpacity={0.7}>
-              <FontAwesome name="microphone" size={15} color="#A1A1AA" />
+            >
+              <TextInput
+                style={{
+                  flex: 1,
+                  fontSize: 15,
+                  color: '#18181B',
+                  maxHeight: 100,
+                  minHeight: 22,
+                  lineHeight: 22,
+                }}
+                value={input}
+                onChangeText={setInput}
+                placeholder="Type your question..."
+                placeholderTextColor="#A1A1AA"
+                multiline
+                returnKeyType="send"
+                onSubmitEditing={() => handleSend()}
+              />
+            </View>
+
+            <TouchableOpacity
+              onPress={() => handleSend()}
+              disabled={!input.trim() || loading}
+              activeOpacity={0.8}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: input.trim() && !loading ? '#E8572A' : '#E4E4E7',
+              }}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <FontAwesome name="arrow-up" size={16} color="#fff" />
+              )}
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            onPress={() => handleSend()}
-            disabled={!input.trim() || loading}
-            activeOpacity={0.8}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: input.trim() && !loading ? '#E8572A' : '#E4E4E7',
-            }}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <FontAwesome name="arrow-up" size={16} color="#fff" />
-            )}
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 };

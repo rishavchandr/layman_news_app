@@ -1,0 +1,26 @@
+You are working on the Layman React Native app.
+
+Project goals:
+- Warm, polished UI matching peach/orange/cream visual direction
+- Fast and reliable mobile UX with smooth transitions
+- Clean authentication and session persistence using Supabase
+- Article browsing, saving, and search
+- Context-aware AI chat ("Ask Layman") with simple responses
+
+Code style:
+- TypeScript-first
+- Keep components small and readable
+- Avoid hardcoding secrets in source files
+- Use environment variables for API keys and endpoints
+- Prefer clear naming and straightforward logic
+
+UX expectations:
+- Rounded cards and warm palette consistency
+- Strong readability over images (use overlays/gradients as needed)
+- Responsive behavior on both iOS and Android
+- Keyboard-safe input layouts for chat and forms
+
+Data and API expectations:
+- Supabase handles auth and saved article persistence
+- NewsData API powers article feeds/search
+- Gemini API powers question suggestions and article-aware chat
