@@ -3,15 +3,25 @@ import AuthRouteNavigator from './AuthRouteNavigator'
 import MainRouteNavigator from './MainRouteNavigator'
 
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import { useAuth } from '../context/AuthContext'
+import { View , Text } from 'react-native'
+
 
 const Stack =createNativeStackNavigator()
 
 const RootRouteNavigator = () => {
-   const isAuthenticated = false;
+   const {session , isLoading} = useAuth()
+   if(isLoading){
+      return (
+         <View>
+            <Text>isLoading</Text>
+         </View>
+      )
+   }
   return (
      <Stack.Navigator screenOptions={{headerShown: false}}>
-        {isAuthenticated ? (
-        <Stack.Screen  name = 'MainTab' component={MainRouteNavigator}/>
+        {session ? (
+        <Stack.Screen  name = 'Article' component={MainRouteNavigator}/>
         ) : (
          <Stack.Screen name='AuthStack' component={AuthRouteNavigator}/>
         )}

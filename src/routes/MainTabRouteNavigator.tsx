@@ -8,9 +8,9 @@ import FontAwesome6 from '@react-native-vector-icons/fontawesome6'
 
 
 export type MainTabParamList = {
-    HomeScreen: undefined,
-    SavedScreen: undefined,
-    ProfileScreen: undefined
+    Home: undefined,
+    Saved: undefined,
+    Profile: undefined
 }
 
 const Tab = createBottomTabNavigator<MainTabParamList>()
@@ -19,48 +19,49 @@ const MainTabRouteNavigator = () => {
   return (
     <Tab.Navigator 
       screenOptions={{
-        tabBarActiveTintColor : "#2C2721ff",
+        tabBarActiveTintColor: '#E8572A',
+        tabBarInactiveTintColor: '#A67C5B',
         headerShown: false
       }}
     >
         <Tab.Screen 
-          name='HomeScreen'
+          name='Home'
           component={HomeScreen}
           options={{
             tabBarIcon: ({color} : {color: string}) => (
                <FontAwesome6 
-                 name='house'
+                 name="house"
                  color={color}
                  size={28}
-                 iconStyle='solid'
+                 iconStyle={"solid"}
                />
             )
           }}
         />
         <Tab.Screen 
-          name='SavedScreen'
+          name='Saved'
           component={SavedScreen}
           options={{
             tabBarIcon: ({color} : {color: string}) => (
                <FontAwesome6 
-                 name='bookmark'
+                 name="bookmark"
                  color={color}
                  size={28}
-                 iconStyle='regular'
+                 iconStyle={"solid"}
                />
             )
           }}
         />
         <Tab.Screen 
-          name='ProfileScreen'
+          name='Profile'
           component={ProfileScreen}
           options={{
             tabBarIcon: ({color} : {color: string}) => (
                <FontAwesome6 
-                 name='circle-user'
+                 name="circle-user"
                  color={color}
                  size={28}
-                 iconStyle='solid'
+                 iconStyle={"solid"}
                />
             )
           }}
